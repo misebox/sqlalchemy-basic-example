@@ -97,13 +97,13 @@ with session() as ss:
     ss.commit()
 
     print('# One to Many')
-    stmt = select(Category, Article)\
+    stmt = select(Article, Category)\
             .join(Article)\
             .order_by(Article.id)
     print('SQL: ',stmt.compile())
     res = ss.execute(stmt)
-    for cat, art in res.fetchall():
-        print(str(cat), str(art))
+    for art, cat in res.fetchall():
+        print(str(art), str(cat))
     print()
 
     # Insert into Tags
