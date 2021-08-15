@@ -1,8 +1,10 @@
 # SQLAlchemy basic example
 
-SQLAlchemy example code about basic usage with PostgreSQL
+SQLAlchemy example code about basic usage with PostgreSQL and SQLite
 
-## run with docker
+See [main.py](main.py).
+
+## run with docker (using PostgreSQL in container)
 
 ```
 # build (required after editing main.py)
@@ -65,4 +67,3 @@ Article(id=3, title=Day 2, category_id=1)
     Tag(id=1, name=private)
 
 ```
-
