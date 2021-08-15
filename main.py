@@ -96,7 +96,7 @@ with session() as ss:
     ss.add_all(articles)
     ss.commit()
 
-    print('# One to Many')
+    print('# join One-to-Many tables')
     stmt = select(Article, Category)\
             .join(Article)\
             .order_by(Article.id)
@@ -120,15 +120,14 @@ with session() as ss:
     articles[2].tags.append(tag_prv)
     ss.commit()
 
-    print('# Many to Many')
-    stmt = select(Tag, Category, Article)\
+    print('# join Many-to-Many tables')
+    stmt = select(Tag, Article)\
             .join(Tag.articles)\
-            .join(Category)\
             .order_by(Tag.id)
     print('SQL: ',stmt.compile())
     res = ss.execute(stmt)
-    for tag, cat, art in res.fetchall():
-        print(str(tag), str(cat), str(art))
+    for tag, art in res.fetchall():
+        print(str(tag), str(art))
 
     print()
 
