@@ -76,8 +76,7 @@ with session() as ss:
     ss.add_all([cat_diary, cat_poem, cat_tech])
     ss.commit()
 
-    print()
-    print('# Select from single table')
+    print('\n# Select from single table')
     stmt = select(Category)\
             .order_by(Category.id)
     print('SQL: ',stmt.compile())
@@ -85,7 +84,6 @@ with session() as ss:
     for row in res.fetchall():
         (cat,) = row
         print(str(cat))
-    print()
 
     # Insert into Articles
     articles = [
@@ -96,7 +94,7 @@ with session() as ss:
     ss.add_all(articles)
     ss.commit()
 
-    print('# join One-to-Many tables')
+    print('\n# join One-to-Many tables')
     stmt = select(Article, Category)\
             .join(Article)\
             .order_by(Article.id)
@@ -104,7 +102,6 @@ with session() as ss:
     res = ss.execute(stmt)
     for art, cat in res.fetchall():
         print(str(art), str(cat))
-    print()
 
     # Insert into Tags
     tag_prv = Tag(name='private')
@@ -120,15 +117,33 @@ with session() as ss:
     articles[2].tags.append(tag_prv)
     ss.commit()
 
-    print('# join Many-to-Many tables')
-    stmt = select(Tag, Article)\
-            .join(Tag.articles)\
-            .order_by(Tag.id)
+    print('\n# join Many-to-Many tables')
+    stmt = select(Article, Tag)\
+            .join(Article.tags)\
+            .order_by(Article.id)
     print('SQL: ',stmt.compile())
     res = ss.execute(stmt)
-    for tag, art in res.fetchall():
-        print(str(tag), str(art))
+    ss.flush()
 
-    print()
+    def to_dict(o):
+        d = o.__dict__
+        d.pop('_sa_instance_state', None)
+        return d
+
+    art_map = {}
+    print('\n## result rows')
+    for art, tag in res.fetchall():
+        print(str(art), str(tag))
+
+        art_dict = art_map.get(art.id) or to_dict(art)
+        art_dict['tags'] = art_dict.get('tags', [])
+        art_dict['tags'].append(to_dict(tag))
+        art_map[art.id] = art_dict
+
+    print('\n## structured output')
+    for _, art in art_map.items():
+        print('Article(id={id}, title={title}, category_id={category_id})'.format(**art))
+        for tag in art['tags']:
+            print('    Tag(id={id}, name={name})'.format(**tag))
 
 
