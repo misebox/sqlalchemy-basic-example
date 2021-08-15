@@ -26,3 +26,32 @@ python main.py
 # clean up
 deactivate
 ```
+
+## result
+
+```
+
+# Select from single table
+SQL:  SELECT category.id, category.name 
+FROM category ORDER BY category.id
+Category(id=1, name=diary)
+Category(id=2, name=poem)
+Category(id=3, name=tech)
+
+# One to Many
+SQL:  SELECT article.id, article.category_id, article.title, article.body, category.id AS id_1, category.name 
+FROM category JOIN article ON category.id = article.category_id ORDER BY article.id
+Article(id=1, category_id=3, title=SQLAlchemy Syntax) Category(id=3, name=tech)
+Article(id=2, category_id=1, title=Day 1) Category(id=1, name=diary)
+Article(id=3, category_id=1, title=Day 2) Category(id=1, name=diary)
+
+# Many to Many
+SQL:  SELECT tag.id, tag.name, category.id AS id_1, category.name AS name_1, article.id AS id_2, article.category_id, article.title, article.body 
+FROM tag JOIN article_tag_map AS article_tag_map_1 ON tag.id = article_tag_map_1.tag_id JOIN article ON article.id = article_tag_map_1.article_id JOIN category ON category.id = article.category_id ORDER BY tag.id
+Tag(id=1, name=private) Category(id=1, name=diary) Article(id=2, category_id=1, title=Day 1)
+Tag(id=1, name=private) Category(id=1, name=diary) Article(id=3, category_id=1, title=Day 2)
+Tag(id=2, name=python) Category(id=3, name=tech) Article(id=1, category_id=3, title=SQLAlchemy Syntax)
+Tag(id=3, name=database) Category(id=3, name=tech) Article(id=1, category_id=3, title=SQLAlchemy Syntax)
+
+```
+
