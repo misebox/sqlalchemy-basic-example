@@ -107,17 +107,17 @@ with session() as ss:
     print()
 
     # Insert into Tags
-    t_prv = Tag(name='private')
-    t_py = Tag(name='python')
-    t_db = Tag(name='database')
-    tags = [t_prv, t_py, t_db]
+    tag_prv = Tag(name='private')
+    tag_py = Tag(name='python')
+    tag_db = Tag(name='database')
+    tags = [tag_prv, tag_py, tag_db]
     ss.add_all(tags)
     ss.commit()
     # associate articles and tags(insert into article_tag_map)
-    articles[0].tags.append(t_db)
-    articles[0].tags.append(t_py)
-    articles[1].tags.append(t_prv)
-    articles[2].tags.append(t_prv)
+    articles[0].tags.append(tag_db)
+    articles[0].tags.append(tag_py)
+    articles[1].tags.append(tag_prv)
+    articles[2].tags.append(tag_prv)
     ss.commit()
 
     print('# Many to Many')
