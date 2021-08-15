@@ -1,0 +1,30 @@
+services:
+  py:
+    build: .
+    environment:
+      - DB_DSN=postgresql://postgres:example@db:5432/postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres
+    restart: always
+    user: postgres
+    environment:
+      # https://hub.docker.com/_/postgres
+      POSTGRES_PASSWORD: example
+
+    healthcheck:
+      test: psql -c 'select 1;'  2>&1 > /dev/null
+      interval: 1s
+      timeout: 1s
+      retries: 3
+      start_period: 1s
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
