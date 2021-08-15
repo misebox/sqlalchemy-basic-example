@@ -1,13 +1,8 @@
 import os
-import enum
-import uuid
 
-from sqlalchemy.orm import registry
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import selectinload
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import relationship
 from sqlalchemy.future import select
 from sqlalchemy import create_engine
 from sqlalchemy import Table
@@ -15,24 +10,16 @@ from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
-from sqlalchemy import Enum
-from sqlalchemy import Boolean
-from sqlalchemy import DateTime
-from sqlalchemy import Sequence
-from sqlalchemy import func
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declared_attr
 
 
 Base = declarative_base()
 
 
 # get DSN from environment variable
-DB_DSN = os.environ.get('DB_DSN')
+DB_DSN = os.environ.get('DB_DSN') or 'sqlite://' # If not set, SQLite inmemory DB is used
 
-ECHO_LOG = True
+ECHO_LOG = False
 engine = create_engine(DB_DSN, echo=ECHO_LOG)
-
 session = sessionmaker(engine)
 
 
@@ -82,11 +69,25 @@ Base.metadata.create_all(bind=engine)
 
 
 with session() as ss:
+    # Insert Categories
     cat_poem = Category(name='poem')
     cat_tech = Category(name='tech')
     cat_diary = Category(name='diary')
     ss.add_all([cat_diary, cat_poem, cat_tech])
     ss.commit()
+
+    print()
+    print('# Select from single table')
+    stmt = select(Category)\
+            .order_by(Category.id)
+    print('SQL: ',stmt.compile())
+    res = ss.execute(stmt)
+    for row in res.fetchall():
+        (cat,) = row
+        print(str(cat))
+    print()
+
+    # Insert into Articles
     articles = [
         Article(title='SQLAlchemy Syntax', category_id=cat_tech.id),
         Article(title='Day 1', category_id=cat_diary.id),
@@ -95,31 +96,40 @@ with session() as ss:
     ss.add_all(articles)
     ss.commit()
 
-    # one to many
+    print('# One to Many')
     stmt = select(Category, Article)\
-            .join(Article)
+            .join(Article)\
+            .order_by(Article.id)
+    print('SQL: ',stmt.compile())
     res = ss.execute(stmt)
     for cat, art in res.fetchall():
         print(str(cat), str(art))
+    print()
 
+    # Insert into Tags
     t_prv = Tag(name='private')
     t_py = Tag(name='python')
     t_db = Tag(name='database')
     tags = [t_prv, t_py, t_db]
     ss.add_all(tags)
     ss.commit()
+    # associate articles and tags(insert into article_tag_map)
     articles[0].tags.append(t_db)
     articles[0].tags.append(t_py)
     articles[1].tags.append(t_prv)
     articles[2].tags.append(t_prv)
     ss.commit()
-    
 
-    # many to many
+    print('# Many to Many')
     stmt = select(Tag, Category, Article)\
             .join(Tag.articles)\
-            .join(Category)
+            .join(Category)\
+            .order_by(Tag.id)
+    print('SQL: ',stmt.compile())
     res = ss.execute(stmt)
     for tag, cat, art in res.fetchall():
         print(str(tag), str(cat), str(art))
+
+    print()
+
 
