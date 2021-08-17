@@ -1,8 +1,10 @@
 import os
+import json
 
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
 from sqlalchemy import create_engine
 from sqlalchemy import Table
@@ -12,7 +14,13 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 
 
-Base = declarative_base()
+class _base:
+    def to_dict(self):
+        d = self.__dict__
+        d.pop('_sa_instance_state', None)
+        return d
+
+Base = declarative_base(cls=_base)
 
 
 # get DSN from environment variable
@@ -80,16 +88,17 @@ with session() as ss:
     stmt = select(Category)\
             .order_by(Category.id)
     print('SQL: ',stmt.compile())
-    res = ss.execute(stmt)
-    for row in res.fetchall():
+    rows = ss.execute(stmt).all()
+    for row in rows:
         (cat,) = row
-        print(str(cat))
+        print(cat)
 
     # Insert into Articles
     articles = [
         Article(title='SQLAlchemy Syntax', category_id=cat_tech.id),
         Article(title='Day 1', category_id=cat_diary.id),
         Article(title='Day 2', category_id=cat_diary.id),
+        Article(title='untitled draft', category_id=cat_diary.id),
     ]
     ss.add_all(articles)
     ss.commit()
@@ -99,9 +108,9 @@ with session() as ss:
             .join(Article)\
             .order_by(Article.id)
     print('SQL: ',stmt.compile())
-    res = ss.execute(stmt)
-    for art, cat in res.fetchall():
-        print(str(art), str(cat))
+    rows = ss.execute(stmt).all()
+    for art, cat in rows:
+        print(art, '|', cat)
 
     # Insert into Tags
     tag_prv = Tag(name='private')
@@ -119,31 +128,44 @@ with session() as ss:
 
     print('\n# join Many-to-Many tables')
     stmt = select(Article, Tag)\
-            .join(Article.tags)\
+            .outerjoin(Article.tags)\
+            .order_by(Article.id)
+            # use  `.join(Article.tags)`  to inner join
+    print('SQL: ',stmt.compile())
+    rows = ss.execute(stmt).all()
+
+    for art, tag in rows:
+        print(art, '|', tag)
+
+    print('\n# join Many-to-Many tables and eagerload')
+    stmt = select(Article)\
+            .options(
+                # To avoid n+1 query when accessing Article.tags
+                joinedload(Article.tags)
+            )\
             .order_by(Article.id)
     print('SQL: ',stmt.compile())
-    res = ss.execute(stmt)
-    ss.flush()
+    rows = ss.execute(stmt).unique().all()
 
-    def to_dict(o):
-        d = o.__dict__
-        d.pop('_sa_instance_state', None)
-        return d
+    for (art,) in rows:
+        print(f'{art}')
+        # n+1 query is not issued
+        tags = []
+        for tag in art.tags:
+            print(f'   {tag}')
 
-    art_map = {}
-    print('\n## result rows')
-    for art, tag in res.fetchall():
-        print(str(art), str(tag))
+    print('\n# output as dict')
+    articles = []
+    for (art,) in rows:
+        tags = []
+        for tag in art.tags:
+            tags.append(tag.to_dict())
+        art_dict = art.to_dict()
+        art_dict['tags'] = tags
+        articles.append(art_dict)
 
-        art_dict = art_map.get(art.id) or to_dict(art)
-        art_dict['tags'] = art_dict.get('tags', [])
-        art_dict['tags'].append(to_dict(tag))
-        art_map[art.id] = art_dict
+        print(art_dict)
 
-    print('\n## structured output')
-    for _, art in art_map.items():
-        print('Article(id={id}, title={title}, category_id={category_id})'.format(**art))
-        for tag in art['tags']:
-            print('    Tag(id={id}, name={name})'.format(**tag))
+    print('\n# output as JSON')
 
-
+    print(json.dumps(dict(articles=articles), indent=2))
