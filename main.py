@@ -16,7 +16,7 @@ from sqlalchemy import String
 
 class _base:
     def to_dict(self):
-        d = self.__dict__
+        d = dict(self.__dict__)
         d.pop('_sa_instance_state', None)
         return d
 
@@ -89,9 +89,12 @@ with session() as ss:
             .order_by(Category.id)
     print('SQL: ',stmt.compile())
     rows = ss.execute(stmt).all()
+
+    categories = []
     for row in rows:
         (cat,) = row
         print(cat)
+        categories.append(cat.to_dict())
 
     # Insert into Articles
     articles = [
@@ -168,4 +171,8 @@ with session() as ss:
 
     print('\n# output as JSON')
 
-    print(json.dumps(dict(articles=articles), indent=2))
+    data = dict(
+        categories=categories,
+        articles=articles,
+    )
+    print(json.dumps(data, indent=2))
