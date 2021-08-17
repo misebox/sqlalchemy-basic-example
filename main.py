@@ -95,10 +95,10 @@ with session() as ss:
 
     # Insert into Articles
     articles = [
-        Article(title='SQLAlchemy Syntax', category_id=cat_tech.id),
-        Article(title='Day 1', category_id=cat_diary.id),
-        Article(title='Day 2', category_id=cat_diary.id),
-        Article(title='untitled draft', category_id=cat_diary.id),
+        Article(title='SQLAlchemy Syntax', category_id=cat_tech.id, body='select(Article)'),
+        Article(title='Day 1', category_id=cat_diary.id, body='stayed home all day'),
+        Article(title='Day 2', category_id=cat_diary.id, body='went to a cafe'),
+        Article(title='untitled draft', category_id=cat_diary.id, body='...'),
     ]
     ss.add_all(articles)
     ss.commit()
